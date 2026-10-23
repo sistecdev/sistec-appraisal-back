@@ -1,0 +1,31 @@
+{
+  "name": "sistec-appraisal-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SISTec Faculty Appraisal — API (its own database and accounts)",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "create-hr": "node scripts/createHR.js"
+  },
+  "dependencies": {
+    "archiver": "8.0.0",
+    "bcryptjs": "3.0.3",
+    "cors": "2.8.6",
+    "docx": "8.5.0",
+    "dotenv": "17.4.2",
+    "express": "5.2.1",
+    "helmet": "8.1.0",
+    "jsonwebtoken": "9.0.3",
+    "mongoose": "9.6.2",
+    "morgan": "1.10.1",
+    "multer": "2.1.1",
+    "nodemailer": "8.0.7",
+    "pdfkit": "0.15.2",
+    "xlsx": "0.18.5"
+  }
+}
