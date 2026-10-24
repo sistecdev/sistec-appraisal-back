@@ -25,12 +25,11 @@ const ROLE_LABEL = {
   director: 'Director',
 };
 
-// Roles that belong to both colleges ("ALL"), and those that may. The
-// Placement and Training Teams are one team each for both colleges, like
-// their HODs.
+// Roles that belong to both colleges ("ALL"), and those that may. A
+// Placement or Training Team member works at GN, at RB or for both.
 const COMMON_TEAMS = ['placement_team', 'training_team'];
-const ALWAYS_BOTH = ['super_admin', 'gm', 'director', ...COMMON_TEAMS];
-const MAY_BE_BOTH = [...ALWAYS_BOTH, 'hr'];
+const ALWAYS_BOTH = ['super_admin', 'gm', 'director'];
+const MAY_BE_BOTH = [...ALWAYS_BOTH, 'hr', ...COMMON_TEAMS];
 
 const roleOf = (u) => u?.role || '';
 const isSuperAdmin = (u) => roleOf(u) === 'super_admin';

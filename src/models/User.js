@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const { ROLES, COMMON_TEAMS } = require('../utils/roles');
+const { ROLES } = require('../utils/roles');
 const { CODES, ALL } = require('../utils/colleges');
 const { UNITS, DEPARTMENTS, TEAM_UNIT, deptOfUnit, guessUnit } = require('../utils/org');
 
@@ -115,9 +115,7 @@ userSchema.statics.migrateRoles = async function migrateRoles() {
 userSchema.statics.migrateColleges = async function migrateColleges() {
   const both = await this.updateMany({ college: { $exists: false }, role: { $in: ['director', 'hr'] } }, { $set: { college: ALL } });
   const gn = await this.updateMany({ college: { $exists: false } }, { $set: { college: 'GN' } });
-  // The Placement and Training Teams became common to both colleges.
-  const teams = await this.updateMany({ role: { $in: COMMON_TEAMS }, college: { $ne: ALL } }, { $set: { college: ALL } });
-  return both.modifiedCount + gn.modifiedCount + teams.modifiedCount;
+  return both.modifiedCount + gn.modifiedCount;
 };
 
 // Accounts made before branches/units existed: the unit is worked out from
