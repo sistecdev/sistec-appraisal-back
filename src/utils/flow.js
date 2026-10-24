@@ -7,7 +7,7 @@ const { isBasicScience } = require('./org');
 //   Faculty               → HOD (marks) → Principal (comment) → Director (comment)
 //   Faculty, Basic Science→ HOD (marks) → Vice Principal (comment) → Principal (comment) → Director (comment)
 //   HOD                   → Principal (marks) → Director (comment)
-//   HR                    → GM (marks) → Principal (comment) → Director (comment)
+//   HR, HR Team           → GM (marks) → Principal (comment) → Director (comment)
 //   Admission Team        → Team Lead (marks) → GM (comment) → Director (comment)
 //   Admin Team            → GM (marks) → Director (comment)
 //   Admin Team, RB        → Admin HOD (marks) → GM (comment) → Principal (comment) → Director (comment)
@@ -32,6 +32,7 @@ const FLOWS = {
   ],
   hod: () => [step('principal', 'marks', 'Principal'), step('director', 'comment', 'Director')],
   hr: () => [step('gm', 'marks', 'GM'), step('principal', 'comment', 'Principal'), step('director', 'comment', 'Director')],
+  hr_team: () => FLOWS.hr(),
   admission_team: () => [step('team_lead', 'marks', 'Team Lead'), step('gm', 'comment', 'GM'), step('director', 'comment', 'Director')],
   // At RB the Admin team has an HOD of its own (an HOD of the Admin unit).
   admin_team: (p) => (p?.college === 'RB'

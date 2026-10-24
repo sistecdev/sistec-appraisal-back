@@ -115,7 +115,9 @@ userSchema.statics.migrateRoles = async function migrateRoles() {
 userSchema.statics.migrateColleges = async function migrateColleges() {
   const both = await this.updateMany({ college: { $exists: false }, role: { $in: ['director', 'hr'] } }, { $set: { college: ALL } });
   const gn = await this.updateMany({ college: { $exists: false } }, { $set: { college: 'GN' } });
-  return both.modifiedCount + gn.modifiedCount;
+  // Before the HR Team role, HR staff were added as Faculty of the HR Team unit.
+  const hrTeam = await this.updateMany({ role: 'faculty', unit: 'HR_TEAM' }, { $set: { role: 'hr_team' } });
+  return both.modifiedCount + gn.modifiedCount + hrTeam.modifiedCount;
 };
 
 // Accounts made before branches/units existed: the unit is worked out from
