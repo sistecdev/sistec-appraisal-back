@@ -79,6 +79,19 @@ const appraisalSchema = new mongoose.Schema(
     // Kept up to date on every save, for lists and the summary.
     totals: { type: mongoose.Schema.Types.Mixed, default: {} },
 
+    // Proofs the appraisee attached — a name and a file each. The file itself
+    // is an AppraisalFile with the same _id.
+    proofs: {
+      type: [new mongoose.Schema({
+        name: { type: String, required: true, trim: true },
+        fileName: { type: String, default: '' },
+        type: { type: String, default: '' },
+        size: { type: Number, default: 0 },
+        at: { type: Date, default: Date.now },
+      })],
+      default: [],
+    },
+
     submittedAt: { type: Date, default: null },
     reviewedAt: { type: Date, default: null },
     reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
@@ -103,7 +116,20 @@ const appraisalSchema = new mongoose.Schema(
 appraisalSchema.index({ cycle: 1, appraisee: 1 }, { unique: true });
 appraisalSchema.index({ 'steps.assignee': 1 });
 
+// The file of one proof, kept in the database so it outlives the server.
+const appraisalFileSchema = new mongoose.Schema(
+  {
+    appraisal: { type: mongoose.Schema.Types.ObjectId, ref: 'Appraisal', required: true, index: true },
+    cycle: { type: mongoose.Schema.Types.ObjectId, ref: 'AppraisalCycle', required: true, index: true },
+    fileName: { type: String, default: '' },
+    type: { type: String, default: '' },
+    data: { type: Buffer, required: true },
+  },
+  { timestamps: true }
+);
+
 const AppraisalCycle = mongoose.model('AppraisalCycle', appraisalCycleSchema);
 const Appraisal = mongoose.model('Appraisal', appraisalSchema);
+const AppraisalFile = mongoose.model('AppraisalFile', appraisalFileSchema);
 
-module.exports = { AppraisalCycle, Appraisal };
+module.exports = { AppraisalCycle, Appraisal, AppraisalFile };

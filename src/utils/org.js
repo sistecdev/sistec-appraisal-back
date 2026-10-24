@@ -5,7 +5,8 @@
 // its own people and data; its HR looks after only that college.
 //
 //   B.Tech + Management
-//     CS, EC, CSIT, EX, EE, CE, CYBER, AIDS, IOT, Basic Science, MBA
+//     CS, EC, CSIT, EX, EE, CE, ME, CYBER, AIDS, IOT, Basic Science, MBA,
+//     HR Team, Lab Tech
 //                          — each has its own HOD, in each college
 //     Admin, Admission     — under the General Manager (one GM for both
 //                            colleges); Admission also has a Team Lead in
@@ -32,11 +33,14 @@ const UNITS = [
   { key: 'EX', label: 'EX', name: 'Electrical & Electronics', dept: 'BTM', kind: 'branch' },
   { key: 'EE', label: 'EE', name: 'Electrical Engineering', dept: 'BTM', kind: 'branch' },
   { key: 'CE', label: 'CE', name: 'Civil Engineering', dept: 'BTM', kind: 'branch' },
+  { key: 'ME', label: 'ME', name: 'Mechanical Engineering', dept: 'BTM', kind: 'branch' },
   { key: 'CYBER', label: 'CYBER', name: 'Cyber Security', dept: 'BTM', kind: 'branch' },
   { key: 'AIDS', label: 'AIDS', name: 'AI & Data Science', dept: 'BTM', kind: 'branch' },
   { key: 'IOT', label: 'IOT', name: 'Internet of Things', dept: 'BTM', kind: 'branch' },
   { key: 'BASIC_SCIENCE', label: 'Basic Science', name: 'Basic Science', dept: 'BTM', kind: 'branch', basicScience: true },
   { key: 'MBA', label: 'MBA', name: 'Master of Business Administration', dept: 'BTM', kind: 'branch' },
+  { key: 'HR_TEAM', label: 'HR Team', name: 'HR Team', dept: 'BTM', kind: 'branch' },
+  { key: 'LAB_TECH', label: 'Lab Tech', name: 'Lab Technicians', dept: 'BTM', kind: 'branch' },
   { key: 'ADMIN', label: 'Admin', name: 'Administration', dept: 'BTM', kind: 'admin' },
   { key: 'ADMISSION', label: 'Admission', name: 'Admission (AdmissionAdmin)', dept: 'BTM', kind: 'admission' },
   { key: 'PLACEMENT', label: 'Placement', name: 'Training & Placement — Placement', dept: 'BTM', kind: 'placement', commonHead: true },
@@ -72,6 +76,8 @@ const guessUnit = (text) => {
   if (exact) return exact.key;
   const s = raw.toLowerCase();
   if (/pharm/.test(s)) return 'PHARMACY';
+  if (/lab\s*tech|laborator|\blab\b/.test(s)) return 'LAB_TECH';
+  if (/\bhr\b|human resource/.test(s)) return 'HR_TEAM';
   if (/\bmba\b|business admin|management/.test(s)) return 'MBA';
   if (/cyber/.test(s)) return 'CYBER';
   if (/\biot\b|internet of things/.test(s)) return 'IOT';
@@ -82,6 +88,7 @@ const guessUnit = (text) => {
   if (/electrical\s*&?\s*(and\s*)?electronics|\bex\b/.test(s)) return 'EX';
   if (/electrical|\bee\b/.test(s)) return 'EE';
   if (/civil|\bce\b/.test(s)) return 'CE';
+  if (/mechanical|\bme(ch)?\b/.test(s)) return 'ME';
   if (/basic|science|math|physics|chemistry|english|humanities/.test(s)) return 'BASIC_SCIENCE';
   if (/placement/.test(s)) return 'PLACEMENT';
   if (/training/.test(s)) return 'TRAINING';

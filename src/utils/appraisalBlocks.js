@@ -109,10 +109,10 @@ const academicBlocks = (ctx, appraisal, cycle) => {
   for (const g of T.SECTION_B) {
     b.push({ t: 'sub', text: `${g.title} (max. points ${g.max}) — earned ${tot[g.key]}` });
     for (const p of g.parts) {
-      para(`${p.title} (${p.max} max)`, { bold: true });
+      para(`${p.principal ? `${marksBy} Feedback` : p.title} (${p.max} max)`, { bold: true });
       if (p.rows) {
         table(['', 'Subject Title', p.valueLabel, 'Max. Score', 'Points earned'],
-          (review[p.key] || []).map((r) => [r.label, r.subject, r.percent, '100', r.points]), [2, 5, 2, 2, 2]);
+          T.RESULT_ROWS.map((_, i) => T.resultRow(self, review, p.key, i)).map((r) => [r.label, r.subject, r.percent, '100', r.points]), [2, 5, 2, 2, 2]);
       } else if (p.principal) {
         para('Note — faculty members elaborate each point with supporting statements.', { italics: true });
         table(['Parameter', 'Supporting statement (faculty)', 'Max. Score', 'Points earned'],

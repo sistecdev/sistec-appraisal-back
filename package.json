@@ -10,7 +10,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "create-hr": "node scripts/createHR.js"
+    "create-hr": "node scripts/createHR.js",
+    "create-demo": "node scripts/createDemo.js"
   },
   "dependencies": {
     "archiver": "8.0.0",

@@ -6,8 +6,9 @@
 // Who fills what:
 //   Section A (self appraisal)              — the faculty member / HOD being appraised
 //   Supporting details for Section B         — the appraisee (the rows HOD marks against)
-//   Section B points, its questions, Section C — the HOD (the Principal, for an HOD's own form)
-//   Principal Feedback (a–j), final comment  — the Principal
+//   Section B points (HOD Feedback a–j included), its questions, Section C
+//                                            — the HOD (the Principal, for an HOD's own form)
+//   Comments                                 — the Principal, Director … (utils/flow.js)
 // The appraisee never sees anything the reviewers write.
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -128,7 +129,8 @@ const QUESTIONS = [
 ];
 
 // Teaching effectiveness: the faculty writes a supporting statement for
-// each; the Principal gives the marks (Principal Feedback, 100 max).
+// each; whoever gives the marks scores them (HOD Feedback, 100 max — the
+// Principal Feedback on an HOD's own form).
 const TEACHING_ITEMS = [
   { key: 'a', label: 'Effective class room management' },
   { key: 'b', label: 'Course material, teaching aids for class handling, Assessment plan' },
@@ -205,8 +207,10 @@ const DETAIL_TABLES = {
 };
 
 // SECTION-B: the reviewer's points. RGPV result and student feedback are
-// four subject rows each; everything else is one score per item.
+// four subject rows each — the faculty writes the subject and the %, the
+// reviewer gives the points; everything else is one score per item.
 const RESULT_ROWS = ['a) Odd Sem', 'b) Odd Sem', 'c) Even Sem', 'd) Even Sem'];
+const RESULT_KEYS = ['rgpv', 'feedback'];
 
 const SECTION_B = [
   {
@@ -214,7 +218,7 @@ const SECTION_B = [
     parts: [
       { key: 'rgpv', title: 'RGPV Result', max: 400, rows: true, valueLabel: '% Result' },
       { key: 'feedback', title: 'Student Feedback', max: 400, rows: true, valueLabel: '% Feedback' },
-      { key: 'principalFeedback', title: 'Principal Feedback', max: 100, principal: true },
+      { key: 'principalFeedback', title: 'HOD Feedback', max: 100, principal: true },
     ],
   },
   {
@@ -305,6 +309,8 @@ const blankSelf = () => ({
   note: '',
   teaching: Object.fromEntries(TEACHING_ITEMS.map((t) => [t.key, ''])),
   details: Object.fromEntries(Object.keys(DETAIL_TABLES).map((k) => [k, []])),
+  // Section B's RGPV result / student feedback rows: subject and %.
+  results: Object.fromEntries(RESULT_KEYS.map((k) => [k, RESULT_ROWS.map(() => ({ subject: '', percent: '' }))])),
 });
 
 const allItems = () => SECTION_B.flatMap((g) => g.parts.flatMap((p) => p.items || []));
@@ -338,7 +344,24 @@ const cleanSelf = (raw = {}) => {
   out.note = str(raw.note, 3000);
   TEACHING_ITEMS.forEach((t) => { out.teaching[t.key] = str(raw.teaching?.[t.key], 3000); });
   Object.entries(DETAIL_TABLES).forEach(([k, t]) => { out.details[k] = cleanRows(raw.details?.[k], t.columns); });
+  RESULT_KEYS.forEach((k) => {
+    out.results[k] = RESULT_ROWS.map((_, i) => ({ subject: str(raw.results?.[k]?.[i]?.subject, 200), percent: score(raw.results?.[k]?.[i]?.percent, 100) }));
+  });
   return out;
+};
+
+// One RGPV result / student feedback row as filled: the faculty's subject
+// and % (older forms had the reviewer write them) with the reviewer's points.
+const resultRow = (self, review, key, i) => {
+  const mine = self?.results?.[key]?.[i] || {};
+  const old = review?.[key]?.[i] || {};
+  const has = (v) => v !== '' && v !== null && v !== undefined;
+  return {
+    label: RESULT_ROWS[i],
+    subject: has(mine.subject) ? mine.subject : old.subject ?? '',
+    percent: has(mine.percent) ? mine.percent : old.percent ?? '',
+    points: old.points ?? '',
+  };
 };
 
 const score = (v, max) => {
@@ -348,15 +371,16 @@ const score = (v, max) => {
   return Math.max(0, Math.min(max, Math.round(n * 100) / 100));
 };
 
-// What a reviewer may save. The HOD's form leaves the Principal's marks as
-// they were; the Principal may set everything.
+// What a reviewer may save. The subject and % of the result / feedback rows
+// are the faculty's (kept as they were on older forms); the reviewer gives
+// their points.
 const cleanReview = (raw = {}, current = blankReview(), { principal = false } = {}) => {
   const out = { ...blankReview(), ...current };
-  ['rgpv', 'feedback'].forEach((k) => {
+  RESULT_KEYS.forEach((k) => {
     out[k] = RESULT_ROWS.map((label, i) => ({
       label,
-      subject: str(raw[k]?.[i]?.subject ?? current[k]?.[i]?.subject, 200),
-      percent: score(raw[k]?.[i]?.percent ?? current[k]?.[i]?.percent, 100),
+      subject: str(current[k]?.[i]?.subject, 200),
+      percent: score(current[k]?.[i]?.percent, 100),
       points: score(raw[k]?.[i]?.points ?? current[k]?.[i]?.points, 100),
     }));
   });
@@ -413,5 +437,5 @@ const template = () => ({
 module.exports = {
   MONTHS, BASIC_FIELDS, SECTION_A_TABLES, SECTION_A_TEXTS, HOD_FUNCTION, sectionATablesFor, QUESTIONS, TEACHING_ITEMS, DETAIL_TABLES,
   RESULT_ROWS, SECTION_B, REVIEW_QUESTIONS, COMPETENCIES, QUADRANTS, SECTION_B_MAX, SECTION_C_MAX,
-  blankSelf, blankReview, blankRow, cleanSelf, cleanReview, totals, periodLabel, template,
+  blankSelf, blankReview, blankRow, cleanSelf, cleanReview, resultRow, totals, periodLabel, template,
 };

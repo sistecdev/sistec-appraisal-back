@@ -1,6 +1,6 @@
 const archiver = require('archiver');
 const User = require('../models/User');
-const { AppraisalCycle, Appraisal } = require('../models/Appraisal');
+const { AppraisalCycle, Appraisal, AppraisalFile } = require('../models/Appraisal');
 const T = require('../utils/appraisalTemplate');
 const S = require('../utils/staffTemplate');
 const { appraisalDocxBuffer } = require('../utils/appraisalDocx');
@@ -178,6 +178,8 @@ const personShape = (p) => (p ? {
   _id: p._id, name: p.name, department: p.department || unitLabel(p.unit), designation: p.designation, unit: p.unit || '', unitLabel: unitLabel(p.unit),
 } : null);
 
+const proofList = (a) => (a.proofs || []).map((p) => ({ _id: p._id, name: p.name, fileName: p.fileName, type: p.type, size: p.size, at: p.at }));
+
 // What each person may see of an appraisal.
 const shapeFor = (a, user) => {
   const f = fam(a);
@@ -194,6 +196,8 @@ const shapeFor = (a, user) => {
     ...(seesReview ? { comment: s.comment || '' } : {}),
   }));
   const now = canActNow(user, a) ? a.steps[a.stepIndex] : null;
+  // This person's own step on the path, if any — to tell them when it comes.
+  const mineAt = mine ? -1 : (a.steps || []).findIndex((_, i) => canActAt(user, a, i));
   const out = {
     _id: a._id,
     status: a.status,
@@ -209,9 +213,11 @@ const shapeFor = (a, user) => {
     self: { ...f.blankSelf(a.formFor), ...(a.self || {}) },
     submittedAt: a.submittedAt,
     updatedAt: a.updatedAt,
+    proofs: proofList(a),
     history,
     steps,
     stepIndex: a.stepIndex,
+    myStep: mineAt >= 0 ? { index: mineAt, label: a.steps[mineAt].label, mode: a.steps[mineAt].mode, done: !!a.steps[mineAt].doneAt } : null,
     marksBy: (a.steps || []).find((s) => s.mode === 'marks')?.label || '',
     firstStep: a.steps?.[0]?.label || '',
     nextStep: now ? a.steps[a.stepIndex + 1]?.label || 'HR' : '',
@@ -494,6 +500,7 @@ const deleteCycle = async (req, res) => {
   const cycle = await AppraisalCycle.findById(req.params.id);
   if (!cycle || !hrSees(req.user, cycle.college)) return bad(res, 'Appraisal round not found', 404);
   const { deletedCount } = await Appraisal.deleteMany({ cycle: cycle._id });
+  await AppraisalFile.deleteMany({ cycle: cycle._id });
   await cycle.deleteOne();
   res.json({ success: true, message: `Round deleted with its ${deletedCount} form(s)` });
 };
@@ -586,6 +593,67 @@ const refillSelf = async (req, res) => {
   a.markModified('self');
   await a.save();
   res.json({ success: true, message: 'Basic details filled again' });
+};
+
+/* ─────────────────────────────── proofs ─────────────────────────────── */
+
+const PROOF_TYPES = {
+  'application/pdf': 'PDF',
+  'image/jpeg': 'JPG',
+  'image/png': 'PNG',
+  'image/webp': 'WEBP',
+  'application/msword': 'DOC',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+};
+const MAX_PROOFS = 25;
+
+// @desc  Attach a proof (a name and a file) to one's own form.
+// @route POST /api/appraisal/appraisals/:id/proofs   multipart: name, file
+const addProof = async (req, res) => {
+  const a = await Appraisal.findById(req.params.id).populate('cycle');
+  if (!a) return bad(res, 'Appraisal not found', 404);
+  if (!sameId(a.appraisee, req.user)) return bad(res, 'Only the person being appraised attaches proofs', 403);
+  if (a.status !== 'faculty') return bad(res, 'This form has been submitted and can no longer be changed');
+  if (!mayFill(a, a.cycle)) return bad(res, windowOf(a.cycle).note);
+  const name = String(req.body.name || '').trim().slice(0, 200);
+  if (!name) return bad(res, 'Give the proof a name');
+  if (!req.file) return bad(res, 'Choose the file of the proof');
+  if (!PROOF_TYPES[req.file.mimetype]) return bad(res, `Only ${[...new Set(Object.values(PROOF_TYPES))].join(', ')} files can be attached`);
+  if ((a.proofs || []).length >= MAX_PROOFS) return bad(res, `At most ${MAX_PROOFS} proofs can be attached`);
+  const fileName = String(req.file.originalname || 'proof').replace(/[^\w.\- ]+/g, '_').slice(0, 150);
+  const file = await AppraisalFile.create({ appraisal: a._id, cycle: a.cycle._id, fileName, type: req.file.mimetype, data: req.file.buffer });
+  a.proofs.push({ _id: file._id, name, fileName, type: req.file.mimetype, size: req.file.size, at: new Date() });
+  await a.save();
+  res.status(201).json({ success: true, proofs: proofList(a), message: 'Proof attached' });
+};
+
+// @route DELETE /api/appraisal/appraisals/:id/proofs/:proofId
+const removeProof = async (req, res) => {
+  const a = await Appraisal.findById(req.params.id).populate('cycle');
+  if (!a) return bad(res, 'Appraisal not found', 404);
+  if (!sameId(a.appraisee, req.user)) return bad(res, 'Only the person being appraised removes proofs', 403);
+  if (a.status !== 'faculty') return bad(res, 'This form has been submitted and can no longer be changed');
+  if (!mayFill(a, a.cycle)) return bad(res, windowOf(a.cycle).note);
+  const p = a.proofs.id(req.params.proofId);
+  if (!p) return bad(res, 'Proof not found', 404);
+  p.deleteOne();
+  await a.save();
+  await AppraisalFile.deleteOne({ _id: req.params.proofId, appraisal: a._id });
+  res.json({ success: true, proofs: proofList(a), message: 'Proof removed' });
+};
+
+// @desc  The file of a proof — for anyone who may open the form.
+// @route GET /api/appraisal/appraisals/:id/proofs/:proofId
+const getProof = async (req, res) => {
+  const a = await Appraisal.findById(req.params.id).select('appraisee college deptKey steps status stepIndex proofs');
+  if (!a) return bad(res, 'Appraisal not found', 404);
+  if (!canSee(a, req.user)) return bad(res, 'You cannot open this appraisal', 403);
+  if (!a.proofs.id(req.params.proofId)) return bad(res, 'Proof not found', 404);
+  const file = await AppraisalFile.findOne({ _id: req.params.proofId, appraisal: a._id });
+  if (!file) return bad(res, 'Proof not found', 404);
+  res.setHeader('Content-Type', file.type || 'application/octet-stream');
+  res.setHeader('Content-Disposition', `inline; filename="${file.fileName || 'proof'}"`);
+  return res.send(file.data);
 };
 
 // Moves the form to step i (or to HR when there are no more) and tells them.
@@ -783,6 +851,6 @@ const downloadCycle = async (req, res) => {
 
 module.exports = {
   getTemplate, getMyRoles, listPeople, releaseCycle, listCycles, getCycle, updateCycle, addToCycle, deleteCycle, setAssignee,
-  listMine, listForReview, getAppraisal, saveSelf, refillSelf, submitSelf,
+  listMine, listForReview, getAppraisal, saveSelf, refillSelf, submitSelf, addProof, removeProof, getProof,
   saveReview, saveComment, forward, sendBack, downloadOne, downloadCycle,
 };
