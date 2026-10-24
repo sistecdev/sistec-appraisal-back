@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const XLSX = require('xlsx');
 const User = require('../models/User');
 const {
-  ROLES, FORM_ROLES, ROLE_LABEL, ALWAYS_BOTH, MAY_BE_BOTH, cleanRole, isSuperAdmin, sameId,
+  ROLES, FORM_ROLES, ROLE_LABEL, ALWAYS_BOTH, MAY_BE_BOTH, COMMON_TEAMS, cleanRole, isSuperAdmin, sameId,
 } = require('../utils/roles');
 const { mailEnabled, sendInvite, sendCredentials } = require('../services/mailer');
 const { CODES, ALL, collegeLabel, cleanCollege } = require('../utils/colleges');
@@ -112,8 +112,8 @@ const problemWith = (f, actor = null) => {
     return `${f.role === 'hod' ? `The ${unitLabel(f.unit)} HOD` : `The ${ROLE_LABEL[f.role]}`} serves both colleges — ask the common HR or the Super Admin to add them`;
   }
   if (!f.college) return 'Choose the college (GN or RB)';
-  if (f.role === 'training_team' && f.college !== ALL) {
-    return 'The Training Team is common to both colleges — the common HR or the Super Admin adds them';
+  if (COMMON_TEAMS.includes(f.role) && f.college !== ALL) {
+    return `The ${ROLE_LABEL[f.role]} is common to both colleges — the common HR or the Super Admin adds them`;
   }
   if (f.college === ALL && !MAY_BE_BOTH.includes(f.role) && !bothColleges(f.role, f.unit)) {
     return `A ${ROLE_LABEL[f.role]} belongs to one college — choose GN or RB`;

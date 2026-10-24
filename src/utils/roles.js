@@ -26,8 +26,10 @@ const ROLE_LABEL = {
 };
 
 // Roles that belong to both colleges ("ALL"), and those that may. The
-// Training Team is one team for both colleges, like the Training HOD.
-const ALWAYS_BOTH = ['super_admin', 'gm', 'director', 'training_team'];
+// Placement and Training Teams are one team each for both colleges, like
+// their HODs.
+const COMMON_TEAMS = ['placement_team', 'training_team'];
+const ALWAYS_BOTH = ['super_admin', 'gm', 'director', ...COMMON_TEAMS];
 const MAY_BE_BOTH = [...ALWAYS_BOTH, 'hr'];
 
 const roleOf = (u) => u?.role || '';
@@ -63,6 +65,6 @@ const cleanRole = (value) => {
 };
 
 module.exports = {
-  FORM_ROLES, REVIEW_ROLES, ROLES, ROLE_LABEL, ALWAYS_BOTH, MAY_BE_BOTH,
+  FORM_ROLES, REVIEW_ROLES, ROLES, ROLE_LABEL, ALWAYS_BOTH, MAY_BE_BOTH, COMMON_TEAMS,
   roleOf, isSuperAdmin, isHR, isPrincipal, isDirector, isHod, isReviewer, isAppraisable, sameId, dept, cleanRole,
 };
