@@ -117,7 +117,8 @@ userSchema.statics.migrateColleges = async function migrateColleges() {
   const gn = await this.updateMany({ college: { $exists: false } }, { $set: { college: 'GN' } });
   // Before the HR Team role, HR staff were added as Faculty of the HR Team unit.
   const hrTeam = await this.updateMany({ role: 'faculty', unit: 'HR_TEAM' }, { $set: { role: 'hr_team' } });
-  // Likewise Lab Techs, added as Faculty of the Lab Tech unit.
+  // Likewise Lab Techs, added as Faculty of the Lab Tech unit (HR then
+  // picks their branch).
   const labTech = await this.updateMany({ role: 'faculty', unit: 'LAB_TECH' }, { $set: { role: 'lab_tech' } });
   return both.modifiedCount + gn.modifiedCount + hrTeam.modifiedCount + labTech.modifiedCount;
 };

@@ -7,9 +7,8 @@
 //   B.Tech + Management
 //     CS, EC, CSIT, EX, EE, CE, ME, CYBER, AIDS, IOT, Basic Science, MBA
 //                          — each has its own HOD, in each college
+//                            (their Faculty and Lab Techs)
 //     HR Team              — the HR department's staff (HR Team role)
-//     Lab Tech             — the Lab Techs (Lab Tech role) and their HOD,
-//                            in each college
 //     Admin, Admission     — under the General Manager (one GM for both
 //                            colleges); Admission also has a Team Lead in
 //                            each college
@@ -27,7 +26,6 @@ const DEPARTMENTS = [
 //       'placement'  — Placement team (Placement HOD, common)
 //       'training'   — Training team (Training HOD, common)
 //       'hr_team'    — HR Team (the HR department's staff)
-//       'lab_tech'   — Lab Techs (Lab Tech HOD)
 // commonHead: its HOD is one person for both colleges.
 // basicScience: its Faculty forms also go to the Vice Principal.
 const UNITS = [
@@ -44,7 +42,9 @@ const UNITS = [
   { key: 'BASIC_SCIENCE', label: 'Basic Science', name: 'Basic Science', dept: 'BTM', kind: 'branch', basicScience: true },
   { key: 'MBA', label: 'MBA', name: 'Master of Business Administration', dept: 'BTM', kind: 'branch' },
   { key: 'HR_TEAM', label: 'HR Team', name: 'HR Team', dept: 'BTM', kind: 'hr_team' },
-  { key: 'LAB_TECH', label: 'Lab Tech', name: 'Lab Technicians', dept: 'BTM', kind: 'lab_tech' },
+  // No longer given to anyone (a Lab Tech belongs to a branch); kept so the
+  // accounts made with it still save until HR picks their branch.
+  { key: 'LAB_TECH', label: 'Lab Tech', name: 'Lab Technicians', dept: 'BTM', kind: 'old' },
   { key: 'ADMIN', label: 'Admin', name: 'Administration', dept: 'BTM', kind: 'admin' },
   { key: 'ADMISSION', label: 'Admission', name: 'Admission (AdmissionAdmin)', dept: 'BTM', kind: 'admission' },
   { key: 'PLACEMENT', label: 'Placement', name: 'Training & Placement — Placement', dept: 'BTM', kind: 'placement', commonHead: true },
@@ -59,14 +59,15 @@ const BRANCHES = UNITS.filter((u) => u.kind === 'branch').map((u) => u.key);
 
 // The unit a team role always belongs to.
 const TEAM_UNIT = {
-  admin_team: 'ADMIN', admission_team: 'ADMISSION', placement_team: 'PLACEMENT', training_team: 'TRAINING', team_lead: 'ADMISSION', hr_team: 'HR_TEAM', lab_tech: 'LAB_TECH',
+  admin_team: 'ADMIN', admission_team: 'ADMISSION', placement_team: 'PLACEMENT', training_team: 'TRAINING', team_lead: 'ADMISSION', hr_team: 'HR_TEAM',
 };
 
 // Which units a role may be given.
 const unitsForRole = (role) => {
-  if (role === 'faculty') return BRANCHES;
+  // A Lab Tech works in a branch, under its HOD.
+  if (role === 'faculty' || role === 'lab_tech') return BRANCHES;
   // The Admin HOD (RB) is an HOD of the Admin unit.
-  if (role === 'hod') return [...BRANCHES, 'PLACEMENT', 'TRAINING', 'ADMIN', 'LAB_TECH'];
+  if (role === 'hod') return [...BRANCHES, 'PLACEMENT', 'TRAINING', 'ADMIN'];
   if (TEAM_UNIT[role]) return [TEAM_UNIT[role]];
   return [];
 };
@@ -81,7 +82,6 @@ const guessUnit = (text) => {
   if (exact) return exact.key;
   const s = raw.toLowerCase();
   if (/pharm/.test(s)) return 'PHARMACY';
-  if (/lab\s*tech|laborator|\blab\b/.test(s)) return 'LAB_TECH';
   if (/\bhr\b|human resource/.test(s)) return 'HR_TEAM';
   if (/\bmba\b|business admin|management/.test(s)) return 'MBA';
   if (/cyber/.test(s)) return 'CYBER';

@@ -8,7 +8,7 @@ const { isBasicScience } = require('./org');
 //   Faculty, Basic Science→ HOD (marks) → Vice Principal (comment) → Principal (comment) → Director (comment)
 //   HOD                   → Principal (marks) → Director (comment)
 //   HR, HR Team           → GM (marks) → Principal (comment) → Director (comment)
-//   Lab Tech (Admin form) → Lab Tech HOD (marks) → Principal (comment) → Director (comment)
+//   Lab Tech (Admin form) → HOD of their branch (marks) → Principal (comment) → Director (comment)
 //   Admission Team        → Team Lead (marks) → GM (comment) → Director (comment)
 //   Admin Team            → GM (marks) → Director (comment)
 //   Admin Team, RB        → Admin HOD (marks) → GM (comment) → Principal (comment) → Director (comment)
@@ -41,7 +41,7 @@ const FLOWS = {
     : [step('gm', 'marks', 'GM'), step('director', 'comment', 'Director')]),
   placement_team: () => [step('hod', 'marks', 'Placement HOD', { unit: 'PLACEMENT' }), step('principal', 'comment', 'Principal'), step('director', 'comment', 'Director')],
   training_team: () => [step('hod', 'marks', 'Training HOD', { unit: 'TRAINING' }), step('principal', 'comment', 'Principal'), step('director', 'comment', 'Director')],
-  lab_tech: () => [step('hod', 'marks', 'Lab Tech HOD', { unit: 'LAB_TECH' }), step('principal', 'comment', 'Principal'), step('director', 'comment', 'Director')],
+  lab_tech: () => [step('hod', 'marks', 'HOD'), step('principal', 'comment', 'Principal'), step('director', 'comment', 'Director')],
 };
 
 const flowFor = (formFor, person) => (FLOWS[formFor] ? FLOWS[formFor](person) : []);

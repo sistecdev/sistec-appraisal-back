@@ -6,8 +6,8 @@
 // HR). HR — of one college, or common to both — manages everyone else,
 // releases the forms and receives them back.
 // The HR Team are the HR department's staff: they fill the HR form (released
-// by their college's HR) but have none of HR's powers. Lab Techs fill the
-// Admin form, marked by the Lab Tech HOD.
+// by their college's HR) but have none of HR's powers. Lab Techs belong to a
+// branch and fill the Admin form, marked by that branch's HOD.
 const FORM_ROLES = ['faculty', 'hod', 'hr', 'hr_team', 'lab_tech', 'admin_team', 'admission_team', 'placement_team', 'training_team'];
 const REVIEW_ROLES = ['team_lead', 'gm', 'vice_principal', 'principal', 'director'];
 const ROLES = ['super_admin', ...FORM_ROLES, ...REVIEW_ROLES];
