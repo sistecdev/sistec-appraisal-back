@@ -45,6 +45,22 @@ const matrix = ({ b, para, table }, review) => {
   if (!review.quadrant) para('Not marked', { italics: true });
 };
 
+// The proofs the appraisee attached. In the PDF their documents follow the
+// form; the Word file only lists them.
+const PICTURES = ['image/jpeg', 'image/png'];
+const proofs = ({ b, para, table }, appraisal, attached) => {
+  const list = appraisal.proofs || [];
+  if (!list.length) return;
+  b.push({ t: 'sub', text: 'Proofs / supporting documents' });
+  const where = (p) => {
+    if (!attached) return 'Uploaded on the website';
+    if (p.type === 'application/pdf' || PICTURES.includes(p.type)) return 'Pages at the end of this PDF';
+    return 'Attached inside this PDF (Attachments)';
+  };
+  table(['#', 'Proof name', 'File', 'Where'], list.map((p, i) => [String(i + 1), p.name, p.fileName, where(p)]), [1, 5, 4, 4]);
+  if (!attached) para('The proof documents are in the PDF download and on the website.', { italics: true });
+};
+
 // The comments of each step and the sign-off at the end of every form.
 const closing = ({ b, para, table }, appraisal) => {
   const steps = stepsOf(appraisal);
@@ -64,7 +80,7 @@ const closing = ({ b, para, table }, appraisal) => {
 
 /* ─────────────────────── Faculty and HOD forms ─────────────────────── */
 
-const academicBlocks = (ctx, appraisal, cycle) => {
+const academicBlocks = (ctx, appraisal, cycle, attached) => {
   const { b, para, table } = ctx;
   const formFor = appraisal.formFor || cycle.formFor;
   const isHodForm = formFor === 'hod';
@@ -146,12 +162,13 @@ const academicBlocks = (ctx, appraisal, cycle) => {
   ], [1, 3, 2, 2, 2, 2]);
   para(`Total Point out of ${tot.totalMax}: ${tot.total}`, { bold: true });
   matrix(ctx, review);
+  proofs(ctx, appraisal, attached);
   closing(ctx, { ...appraisal, formFor, self });
 };
 
 /* ─────────────── Admin / Placement / Admission / HR team forms ─────────────── */
 
-const staffBlocks = (ctx, appraisal, cycle) => {
+const staffBlocks = (ctx, appraisal, cycle, attached) => {
   const { b, para, table } = ctx;
   const formFor = appraisal.formFor || cycle.formFor;
   const self = { ...S.blankSelf(formFor), ...(appraisal.self || {}) };
@@ -203,17 +220,19 @@ const staffBlocks = (ctx, appraisal, cycle) => {
     para(review[q.key]);
   }
   matrix(ctx, review);
+  proofs(ctx, appraisal, attached);
   closing(ctx, { ...appraisal, formFor, self });
 };
 
-const buildBlocks = ({ appraisal, cycle, institute = process.env.INSTITUTE_NAME || 'Sagar Institute of Science & Technology (SISTec), Bhopal' }) => {
+// proofsAttached: the PDF, which carries the proof documents at its end.
+const buildBlocks = ({ appraisal, cycle, institute = process.env.INSTITUTE_NAME || 'Sagar Institute of Science & Technology (SISTec), Bhopal', proofsAttached = false }) => {
   const ctx = builder();
   const formFor = appraisal.formFor || cycle.formFor;
   ctx.b.push({ t: 'title', text: institute });
   ctx.b.push({ t: 'title', text: `${FORM_TITLE[formFor] || 'Appraisal'} — ${cycle.title}`, small: true });
   ctx.para(`Period: ${T.periodLabel(cycle.from, cycle.to)}`, { center: true, italics: true });
-  if (S.isStaffForm(formFor)) staffBlocks(ctx, appraisal, cycle);
-  else academicBlocks(ctx, appraisal, cycle);
+  if (S.isStaffForm(formFor)) staffBlocks(ctx, appraisal, cycle, proofsAttached);
+  else academicBlocks(ctx, appraisal, cycle, proofsAttached);
   return { blocks: ctx.b, name: appraisal.self?.basic?.name || '', institute };
 };
 

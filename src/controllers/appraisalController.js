@@ -807,7 +807,18 @@ const mayDownloadRound = (u, cycle) => hrSees(u, cycle.college)
   || (u.role === 'principal' && collegeMatch(u, cycle));
 
 const fileName = (a, fmt) => `${String(a.appraisee?.name || 'Appraisal').replace(/[^A-Za-z0-9]+/g, '_')}_${a.status}.${fmt.ext}`;
-const fileFor = (a, fmt) => fmt.build({ appraisal: a, cycle: a.cycle, institute: COLLEGES[a.college]?.full });
+// The PDF carries the proof documents too.
+const proofFilesOf = async (a) => {
+  if (!a.proofs?.length) return [];
+  const files = await AppraisalFile.find({ appraisal: a._id }).lean();
+  const byId = new Map(files.map((f) => [String(f._id), f]));
+  return a.proofs.map((p) => ({ p, f: byId.get(String(p._id)) })).filter(({ f }) => f)
+    .map(({ p, f }) => ({ name: p.name, fileName: f.fileName, type: f.type, data: Buffer.from(f.data.buffer ?? f.data) }));
+};
+const fileFor = async (a, fmt) => fmt.build({
+  appraisal: a, cycle: a.cycle, institute: COLLEGES[a.college]?.full,
+  proofFiles: fmt.ext === 'pdf' ? await proofFilesOf(a) : [],
+});
 
 // @route GET /api/appraisal/appraisals/:id/download?format=pdf|docx
 const downloadOne = async (req, res) => {
