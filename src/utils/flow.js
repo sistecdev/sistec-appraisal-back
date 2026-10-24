@@ -10,11 +10,13 @@ const { isBasicScience } = require('./org');
 //   HR                    → GM (marks) → Principal (comment) → Director (comment)
 //   Admission Team        → Team Lead (marks) → GM (comment) → Director (comment)
 //   Admin Team            → GM (marks) → Director (comment)
+//   Admin Team, RB        → Admin HOD (marks) → GM (comment) → Principal (comment) → Director (comment)
 //   Placement Team        → Placement HOD (marks) → Principal (comment) → Director (comment)
 //   Training Team         → Training HOD (marks) → Principal (comment) → Director (comment)
 //
 // `role` is who acts; `unit` narrows an HOD step to that unit's HOD (the
-// Placement / Training HOD, common to both colleges). A step held by one
+// Placement / Training HOD, common to both colleges; the Admin HOD of a
+// college). A step held by one
 // named person (an HOD, a Team Lead) gets that person when the form is
 // released; the others (Principal, Vice Principal, GM, Director) go to
 // whoever holds the role for the form's college.
@@ -31,7 +33,10 @@ const FLOWS = {
   hod: () => [step('principal', 'marks', 'Principal'), step('director', 'comment', 'Director')],
   hr: () => [step('gm', 'marks', 'GM'), step('principal', 'comment', 'Principal'), step('director', 'comment', 'Director')],
   admission_team: () => [step('team_lead', 'marks', 'Team Lead'), step('gm', 'comment', 'GM'), step('director', 'comment', 'Director')],
-  admin_team: () => [step('gm', 'marks', 'GM'), step('director', 'comment', 'Director')],
+  // At RB the Admin team has an HOD of its own (an HOD of the Admin unit).
+  admin_team: (p) => (p?.college === 'RB'
+    ? [step('hod', 'marks', 'Admin HOD', { unit: 'ADMIN' }), step('gm', 'comment', 'GM'), step('principal', 'comment', 'Principal'), step('director', 'comment', 'Director')]
+    : [step('gm', 'marks', 'GM'), step('director', 'comment', 'Director')]),
   placement_team: () => [step('hod', 'marks', 'Placement HOD', { unit: 'PLACEMENT' }), step('principal', 'comment', 'Principal'), step('director', 'comment', 'Director')],
   training_team: () => [step('hod', 'marks', 'Training HOD', { unit: 'TRAINING' }), step('principal', 'comment', 'Principal'), step('director', 'comment', 'Director')],
 };

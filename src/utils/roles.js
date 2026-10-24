@@ -25,8 +25,9 @@ const ROLE_LABEL = {
   director: 'Director',
 };
 
-// Roles that belong to both colleges ("ALL"), and those that may.
-const ALWAYS_BOTH = ['super_admin', 'gm', 'director'];
+// Roles that belong to both colleges ("ALL"), and those that may. The
+// Training Team is one team for both colleges, like the Training HOD.
+const ALWAYS_BOTH = ['super_admin', 'gm', 'director', 'training_team'];
 const MAY_BE_BOTH = [...ALWAYS_BOTH, 'hr'];
 
 const roleOf = (u) => u?.role || '';

@@ -67,6 +67,20 @@ const sendReset = (user, token) => send({
   button: { label: 'Choose a new password', href: `${siteUrl()}/set-password#token=${token}` },
 });
 
+// The User ID and a temporary password, sent by the Super Admin.
+const sendCredentials = (user, password) => send({
+  to: user.email,
+  name: user.name,
+  subject: `Your ${short()} Appraisal sign-in details`,
+  lines: [
+    'Here are your sign-in details for the faculty appraisal website.',
+    `User ID: ${user.email}`,
+    `Temporary password: ${password}`,
+    'You will be asked to choose your own password when you first sign in. Please do not share this email.',
+  ],
+  button: { label: 'Sign in', href: `${siteUrl()}/login` },
+});
+
 // Appraisal updates — sent only when email is on; never blocks the request.
 const notify = (user, subject, line, path) => {
   if (!mailEnabled() || !user?.email) return;
@@ -74,4 +88,4 @@ const notify = (user, subject, line, path) => {
     .catch((err) => console.error('appraisal email failed:', err.message));
 };
 
-module.exports = { mailEnabled, sendInvite, sendReset, notify, siteUrl };
+module.exports = { mailEnabled, sendInvite, sendReset, sendCredentials, notify, siteUrl };

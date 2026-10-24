@@ -19,7 +19,7 @@ const DEMO = [
   ['GM Demo', 'gm.demo@demo.in', 'gm', 'ALL', '', 'General Manager'],
   ['Team Lead Demo', 'teamlead.demo@demo.in', 'team_lead', 'GN', '', 'Team Lead — Admission'],
   ['Vice Principal Demo', 'vp.demo@demo.in', 'vice_principal', 'GN', '', 'Vice Principal'],
-  ['Training Team Demo', 'training.demo@demo.in', 'training_team', 'GN', '', 'Training Executive'],
+  ['Training Team Demo', 'training.demo@demo.in', 'training_team', 'ALL', '', 'Training Executive'],
   ['Placement HOD Demo', 'hod.placement.demo@demo.in', 'hod', 'ALL', 'PLACEMENT', 'Head — Placement'],
   ['Training HOD Demo', 'hod.training.demo@demo.in', 'hod', 'ALL', 'TRAINING', 'Head — Training'],
   ['ME Faculty Demo', 'faculty.me.demo@demo.in', 'faculty', 'GN', 'ME', 'Assistant Professor'],

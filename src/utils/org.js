@@ -61,7 +61,8 @@ const TEAM_UNIT = {
 // Which units a role may be given.
 const unitsForRole = (role) => {
   if (role === 'faculty') return BRANCHES;
-  if (role === 'hod') return [...BRANCHES, 'PLACEMENT', 'TRAINING'];
+  // The Admin HOD (RB) is an HOD of the Admin unit.
+  if (role === 'hod') return [...BRANCHES, 'PLACEMENT', 'TRAINING', 'ADMIN'];
   if (TEAM_UNIT[role]) return [TEAM_UNIT[role]];
   return [];
 };

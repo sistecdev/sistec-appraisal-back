@@ -272,8 +272,10 @@ const listRow = (a) => ({
 /* ─────────────────────────────── HR ─────────────────────────────── */
 
 const formList = () => FORM_ROLES.map((k) => ({
-  key: k, label: ROLE_LABEL[k], family: family(k), route: routeLabel(k, {}),
+  key: k, label: ROLE_LABEL[k], family: family(k), route: routeLabel(k, { college: 'GN' }),
   ...(k === 'faculty' ? { routeBasicScience: routeLabel(k, { unit: 'BASIC_SCIENCE' }) } : {}),
+  // A path of its own at RB (the Admin team's Admin HOD).
+  ...(routeLabel(k, { college: 'RB' }) !== routeLabel(k, { college: 'GN' }) ? { routeRB: routeLabel(k, { college: 'RB' }) } : {}),
 }));
 
 // @route GET /api/appraisal/template
@@ -434,7 +436,7 @@ const listCycles = async (req, res) => {
       const s = by[String(c._id)] || { total: 0, stages: {} };
       return {
         ...c, formLabel: ROLE_LABEL[c.formFor], collegeLabel: collegeLabel(c.college), period: T.periodLabel(c.from, c.to),
-        window: windowOf(c), route: routeLabel(c.formFor, {}),
+        window: windowOf(c), route: routeLabel(c.formFor, { college: c.college }),
         counts: { total: s.total, completed: s.stages.Completed || 0, stages: s.stages },
       };
     }),
@@ -456,7 +458,7 @@ const getCycle = async (req, res) => {
     : [];
   res.json({
     success: true,
-    data: { ...cycleShape(cycle), route: routeLabel(cycle.formFor, {}) },
+    data: { ...cycleShape(cycle), route: routeLabel(cycle.formFor, { college: cycle.college }) },
     appraisals: list.map(listRow).sort((a, b) => (a.appraisee?.name || '').localeCompare(b.appraisee?.name || '')),
     assignable,
   });

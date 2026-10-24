@@ -4,7 +4,7 @@ const User = require('../models/User');
 const {
   ROLES, FORM_ROLES, ROLE_LABEL, ALWAYS_BOTH, MAY_BE_BOTH, cleanRole, isSuperAdmin, sameId,
 } = require('../utils/roles');
-const { mailEnabled, sendInvite } = require('../services/mailer');
+const { mailEnabled, sendInvite, sendCredentials } = require('../services/mailer');
 const { CODES, ALL, collegeLabel, cleanCollege } = require('../utils/colleges');
 const {
   DEPARTMENTS, UNITS, UNIT, TEAM_UNIT, unitsForRole, guessUnit, cleanDept, unitLabel, deptLabel, deptOfUnit,
@@ -112,6 +112,9 @@ const problemWith = (f, actor = null) => {
     return `${f.role === 'hod' ? `The ${unitLabel(f.unit)} HOD` : `The ${ROLE_LABEL[f.role]}`} serves both colleges — ask the common HR or the Super Admin to add them`;
   }
   if (!f.college) return 'Choose the college (GN or RB)';
+  if (f.role === 'training_team' && f.college !== ALL) {
+    return 'The Training Team is common to both colleges — the common HR or the Super Admin adds them';
+  }
   if (f.college === ALL && !MAY_BE_BOTH.includes(f.role) && !bothColleges(f.role, f.unit)) {
     return `A ${ROLE_LABEL[f.role]} belongs to one college — choose GN or RB`;
   }
@@ -222,12 +225,25 @@ const setActive = async (req, res) => {
   res.json({ success: true, data: row(user), message: active ? 'Account switched on' : 'Account switched off — they are signed out' });
 };
 
-// @route POST /api/users/:id/access   { access: 'temp' | 'invite' }
-// A new temporary password, or a fresh invite / set-password email.
+// @route POST /api/users/:id/access   { access: 'temp' | 'invite' | 'email' }
+// A new temporary password, or a fresh invite / set-password email. 'email'
+// (Super Admin only): a new temporary password, emailed with the User ID.
 const resendAccess = async (req, res) => {
   const user = await User.findById(req.params.id);
   if (!user || !manages(req.user, user)) return bad(res, 'Account not found', 404);
   if (!user.isActive) return bad(res, 'Switch the account on first');
+  if (req.body.access === 'email') {
+    if (!isSuperAdmin(req.user)) return bad(res, 'Only the Super Admin can email sign-in details', 403);
+    if (!mailEnabled()) return bad(res, 'Email is not set up on this server — give a temporary password instead');
+    const password = tempPassword();
+    await user.setPassword(password, { temporary: true });
+    await user.save();
+    let sent;
+    try { sent = await sendCredentials(user, password); } catch (err) { sent = { sent: false, reason: err.message }; }
+    // The old password no longer works, so if the email fails the new one is shown instead.
+    if (!sent.sent) return res.json({ success: true, tempPassword: password, message: `The email could not be sent (${sent.reason}) — give this password yourself` });
+    return res.json({ success: true, message: `User ID and a new temporary password emailed to ${user.email}` });
+  }
   const how = req.body.access === 'invite' ? 'invite' : 'temp';
   if (how === 'invite' && !mailEnabled()) return bad(res, 'Email is not set up on this server — give a temporary password instead');
   const access = await giveAccess(user, how);
