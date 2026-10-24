@@ -5,14 +5,8 @@
 // Super Admin creates the HR accounts (each college's HR and the common
 // HR). HR — of one college, or common to both — manages everyone else,
 // releases the forms and receives them back.
-// The HR Team are the HR department's staff: they fill the HR form (released
-// by their college's HR) but have none of HR's powers.
-const FORM_ROLES = ['faculty', 'hod', 'hr', 'hr_team', 'admin_team', 'admission_team', 'placement_team', 'training_team'];
-// The team leads give the marks on their team's forms, as an HOD does on a
-// branch's: the Admission Team Lead, the HR Team Lead, the Placement Team
-// Lead and the Training Team Lead — one of each in each college.
-const LEAD_ROLES = ['team_lead', 'hr_team_lead', 'placement_lead', 'training_lead'];
-const REVIEW_ROLES = [...LEAD_ROLES, 'gm', 'vice_principal', 'principal', 'director'];
+const FORM_ROLES = ['faculty', 'hod', 'hr', 'admin_team', 'admission_team', 'placement_team', 'training_team'];
+const REVIEW_ROLES = ['team_lead', 'gm', 'vice_principal', 'principal', 'director'];
 const ROLES = ['super_admin', ...FORM_ROLES, ...REVIEW_ROLES];
 
 const ROLE_LABEL = {
@@ -20,23 +14,22 @@ const ROLE_LABEL = {
   faculty: 'Faculty',
   hod: 'HOD',
   hr: 'HR',
-  hr_team: 'HR Team',
   admin_team: 'Admin Team',
   admission_team: 'Admission Team',
   placement_team: 'Placement Team',
   training_team: 'Training Team',
   team_lead: 'Team Lead (Admission)',
-  hr_team_lead: 'HR Team Lead',
-  placement_lead: 'Placement Team Lead',
-  training_lead: 'Training Team Lead',
   gm: 'General Manager (GM)',
   vice_principal: 'Vice Principal',
   principal: 'Principal',
   director: 'Director',
 };
 
-// Roles that belong to both colleges ("ALL"), and those that may.
-const ALWAYS_BOTH = ['super_admin', 'gm', 'director'];
+// Roles that belong to both colleges ("ALL"), and those that may. The
+// Placement and Training Teams are one team each for both colleges, like
+// their HODs.
+const COMMON_TEAMS = ['placement_team', 'training_team'];
+const ALWAYS_BOTH = ['super_admin', 'gm', 'director', ...COMMON_TEAMS];
 const MAY_BE_BOTH = [...ALWAYS_BOTH, 'hr'];
 
 const roleOf = (u) => u?.role || '';
@@ -72,6 +65,6 @@ const cleanRole = (value) => {
 };
 
 module.exports = {
-  FORM_ROLES, REVIEW_ROLES, LEAD_ROLES, ROLES, ROLE_LABEL, ALWAYS_BOTH, MAY_BE_BOTH,
+  FORM_ROLES, REVIEW_ROLES, ROLES, ROLE_LABEL, ALWAYS_BOTH, MAY_BE_BOTH, COMMON_TEAMS,
   roleOf, isSuperAdmin, isHR, isPrincipal, isDirector, isHod, isReviewer, isAppraisable, sameId, dept, cleanRole,
 };

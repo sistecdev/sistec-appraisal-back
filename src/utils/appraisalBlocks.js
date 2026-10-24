@@ -16,7 +16,6 @@ const FORM_TITLE = {
   faculty: 'Faculty Appraisal', hod: 'HOD Appraisal', admin_team: 'Admin Team Appraisal',
   placement_team: 'Placement Team Appraisal', admission_team: 'Admission Team Appraisal', training_team: 'Training Team Appraisal',
   hr: 'HR Appraisal',
-  hr_team: 'HR Team Appraisal',
 };
 
 // The form's steps (copied onto it when released; worked out for an older form).

@@ -6,7 +6,7 @@ const S = require('../utils/staffTemplate');
 const { appraisalDocxBuffer } = require('../utils/appraisalDocx');
 const { appraisalPdfBuffer } = require('../utils/appraisalPdf');
 const { notify } = require('../services/mailer');
-const { FORM_ROLES, LEAD_ROLES, ROLE_LABEL, isHR, isSuperAdmin, isReviewer, sameId } = require('../utils/roles');
+const { FORM_ROLES, ROLE_LABEL, isHR, isSuperAdmin, isReviewer, sameId } = require('../utils/roles');
 const { COLLEGES, CODES, ALL, collegeLabel, cleanCollege } = require('../utils/colleges');
 const { DEPARTMENTS, UNITS, UNIT, unitLabel } = require('../utils/org');
 const { flowFor, isPersonal, routeLabel } = require('../utils/flow');
@@ -157,9 +157,8 @@ const assigneeFor = async (s, person) => {
     const list = await User.find(q).select('_id name college').lean();
     return (common && list.find((h) => h.college === ALL)) || list[0] || null;
   }
-  // A team lead (Admission, HR, Placement, Training) of the person's college.
-  if (LEAD_ROLES.includes(s.role)) {
-    const q = { role: s.role, isActive: true, _id: { $ne: person._id } };
+  if (s.role === 'team_lead') {
+    const q = { role: 'team_lead', isActive: true, _id: { $ne: person._id } };
     if (person.college !== ALL) q.college = person.college;
     return User.findOne(q).select('_id name').lean();
   }
@@ -418,13 +417,8 @@ const releaseCycle = async (req, res) => {
 };
 
 // @route GET /api/appraisal/cycles
-// The rounds of a college — every person in them and where their form is —
-// are for HR and the heads of the college; an HOD or a Team Lead sees only
-// the forms on their own path (listForReview).
-const seesRounds = (u) => isHR(u) || ['principal', 'director', 'gm'].includes(u.role);
-
 const listCycles = async (req, res) => {
-  if (!seesRounds(req.user)) return bad(res, 'Not allowed', 403);
+  if (!isHR(req.user) && !isReviewer(req.user)) return bad(res, 'Not allowed', 403);
   const filter = req.user.college === ALL ? {} : { college: req.user.college };
   const cycles = await AppraisalCycle.find(filter).sort('-createdAt').populate('releasedBy', 'name').lean();
   const forms = await Appraisal.find({ cycle: { $in: cycles.map((c) => c._id) } }).select('cycle status stepIndex steps.label').lean();
@@ -451,14 +445,14 @@ const listCycles = async (req, res) => {
 
 // @route GET /api/appraisal/cycles/:id
 const getCycle = async (req, res) => {
-  if (!seesRounds(req.user)) return bad(res, 'Not allowed', 403);
+  if (!isHR(req.user) && !isReviewer(req.user)) return bad(res, 'Not allowed', 403);
   const cycle = await AppraisalCycle.findById(req.params.id).lean();
   if (!cycle || !(req.user.college === ALL || req.user.college === cycle.college)) return bad(res, 'Appraisal round not found', 404);
   const list = await Appraisal.find({ cycle: cycle._id })
     .populate('appraisee', 'name department designation unit').populate('reviewer', 'name').populate('steps.assignee', 'name').lean();
   // The HODs and Team Leads HR may put on a form of this round.
   const assignable = isHR(req.user)
-    ? (await User.find({ role: { $in: ['hod', ...LEAD_ROLES] }, isActive: true, college: cycle.college === ALL ? { $in: [...CODES, ALL] } : { $in: [cycle.college, ALL] } })
+    ? (await User.find({ role: { $in: ['hod', 'team_lead'] }, isActive: true, college: cycle.college === ALL ? { $in: [...CODES, ALL] } : { $in: [cycle.college, ALL] } })
       .select('name role unit college').sort('name').lean())
       .map((u) => ({ _id: u._id, name: u.name, role: u.role, unit: u.unit || '', unitLabel: unitLabel(u.unit), college: u.college }))
     : [];
