@@ -6,7 +6,8 @@
 //
 //   B.Tech + Management
 //     CS, EC, CSIT, EX, EE, CE, ME, CYBER, AIDS, IOT, Basic Science, MBA,
-//     HR Team, Lab Tech
+//     Lab Tech
+//     HR Team              — the HR department's staff (HR Team role)
 //                          — each has its own HOD, in each college
 //     Admin, Admission     — under the General Manager (one GM for both
 //                            colleges); Admission also has a Team Lead in
@@ -24,6 +25,7 @@ const DEPARTMENTS = [
 //       'admission'  — Admission team (Team Lead, GM)
 //       'placement'  — Placement team (Placement HOD, common)
 //       'training'   — Training team (Training HOD, common)
+//       'hr_team'    — HR Team (the HR department's staff)
 // commonHead: its HOD is one person for both colleges.
 // basicScience: its Faculty forms also go to the Vice Principal.
 const UNITS = [
@@ -39,7 +41,7 @@ const UNITS = [
   { key: 'IOT', label: 'IOT', name: 'Internet of Things', dept: 'BTM', kind: 'branch' },
   { key: 'BASIC_SCIENCE', label: 'Basic Science', name: 'Basic Science', dept: 'BTM', kind: 'branch', basicScience: true },
   { key: 'MBA', label: 'MBA', name: 'Master of Business Administration', dept: 'BTM', kind: 'branch' },
-  { key: 'HR_TEAM', label: 'HR Team', name: 'HR Team', dept: 'BTM', kind: 'branch' },
+  { key: 'HR_TEAM', label: 'HR Team', name: 'HR Team', dept: 'BTM', kind: 'hr_team' },
   { key: 'LAB_TECH', label: 'Lab Tech', name: 'Lab Technicians', dept: 'BTM', kind: 'branch' },
   { key: 'ADMIN', label: 'Admin', name: 'Administration', dept: 'BTM', kind: 'admin' },
   { key: 'ADMISSION', label: 'Admission', name: 'Admission (AdmissionAdmin)', dept: 'BTM', kind: 'admission' },
@@ -55,14 +57,16 @@ const BRANCHES = UNITS.filter((u) => u.kind === 'branch').map((u) => u.key);
 
 // The unit a team role always belongs to.
 const TEAM_UNIT = {
-  admin_team: 'ADMIN', admission_team: 'ADMISSION', placement_team: 'PLACEMENT', training_team: 'TRAINING', team_lead: 'ADMISSION',
+  admin_team: 'ADMIN', admission_team: 'ADMISSION', placement_team: 'PLACEMENT', training_team: 'TRAINING', team_lead: 'ADMISSION', hr_team: 'HR_TEAM',
+  hr_team_lead: 'HR_TEAM', placement_lead: 'PLACEMENT', training_lead: 'TRAINING',
 };
 
 // Which units a role may be given.
 const unitsForRole = (role) => {
   if (role === 'faculty') return BRANCHES;
-  // The Admin HOD (RB) is an HOD of the Admin unit.
-  if (role === 'hod') return [...BRANCHES, 'PLACEMENT', 'TRAINING', 'ADMIN'];
+  // The Admin HOD (RB) is an HOD of the Admin unit. The Placement and
+  // Training teams are marked by their Team Leads, not an HOD.
+  if (role === 'hod') return [...BRANCHES, 'ADMIN'];
   if (TEAM_UNIT[role]) return [TEAM_UNIT[role]];
   return [];
 };
