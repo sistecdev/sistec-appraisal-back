@@ -14,6 +14,7 @@ router.post('/', c.create);
 router.get('/import/template', c.importTemplate);
 router.post('/import/preview', upload.single('file'), c.importPreview);
 router.post('/import', c.importCreate);
+router.post('/access/email', c.emailAllAccess);
 router.put('/:id', c.update);
 router.patch('/:id/active', c.setActive);
 router.post('/:id/access', c.resendAccess);

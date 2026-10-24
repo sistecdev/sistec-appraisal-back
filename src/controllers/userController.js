@@ -222,6 +222,45 @@ const setActive = async (req, res) => {
   res.json({ success: true, data: row(user), message: active ? 'Account switched on' : 'Account switched off — they are signed out' });
 };
 
+// A new temporary password, emailed with the User ID. The password changes
+// only once the email has gone, so a failed email leaves the old one working.
+const emailCredentials = async (user) => {
+  const password = tempPassword();
+  let sent;
+  try { sent = await sendCredentials(user, password); } catch (err) { sent = { sent: false, reason: err.message }; }
+  if (!sent.sent) return sent;
+  await user.setPassword(password, { temporary: true });
+  await user.save();
+  return sent;
+};
+
+// @desc  Super Admin: email the User ID and a new temporary password to many
+//        accounts at once (the ones listed on the People page). Super Admin
+//        accounts and switched-off accounts are left out.
+// @route POST /api/users/access/email   { ids: [..] }
+const emailAllAccess = async (req, res) => {
+  if (!isSuperAdmin(req.user)) return bad(res, 'Only the Super Admin can email sign-in details', 403);
+  if (!mailEnabled()) return bad(res, 'Email is not set up on this server (SMTP in .env)');
+  const ids = [...new Set((Array.isArray(req.body.ids) ? req.body.ids : []).map(String).filter((x) => /^[a-f0-9]{24}$/i.test(x)))].slice(0, 2000);
+  if (!ids.length) return bad(res, 'Nobody to send to');
+  const users = await User.find({ _id: { $in: ids }, isActive: true, role: { $ne: 'super_admin' } });
+  const failed = [];
+  let sent = 0;
+  // A few at a time, so the mail server is not flooded.
+  for (let i = 0; i < users.length; i += 3) {
+    // eslint-disable-next-line no-await-in-loop
+    const results = await Promise.all(users.slice(i, i + 3).map(async (u) => ({ u, r: await emailCredentials(u) })));
+    results.forEach(({ u, r }) => { if (r.sent) sent += 1; else failed.push({ name: u.name, email: u.email, reason: r.reason }); });
+  }
+  const skipped = ids.length - users.length;
+  res.json({
+    success: true, sent, failed, skipped,
+    message: `Sign-in details emailed to ${sent} ${sent === 1 ? 'person' : 'people'}`
+      + `${failed.length ? ` — ${failed.length} could not be sent (their password is unchanged)` : ''}`
+      + `${skipped ? ` — ${skipped} skipped (switched off or Super Admin)` : ''}`,
+  });
+};
+
 // @route POST /api/users/:id/access   { access: 'temp' | 'invite' | 'email' }
 // A new temporary password, or a fresh invite / set-password email. 'email'
 // (Super Admin only): a new temporary password, emailed with the User ID.
@@ -232,13 +271,8 @@ const resendAccess = async (req, res) => {
   if (req.body.access === 'email') {
     if (!isSuperAdmin(req.user)) return bad(res, 'Only the Super Admin can email sign-in details', 403);
     if (!mailEnabled()) return bad(res, 'Email is not set up on this server — give a temporary password instead');
-    const password = tempPassword();
-    await user.setPassword(password, { temporary: true });
-    await user.save();
-    let sent;
-    try { sent = await sendCredentials(user, password); } catch (err) { sent = { sent: false, reason: err.message }; }
-    // The old password no longer works, so if the email fails the new one is shown instead.
-    if (!sent.sent) return res.json({ success: true, tempPassword: password, message: `The email could not be sent (${sent.reason}) — give this password yourself` });
+    const sent = await emailCredentials(user);
+    if (!sent.sent) return bad(res, `The email could not be sent (${sent.reason}) — their password is unchanged`, 502);
     return res.json({ success: true, message: `User ID and a new temporary password emailed to ${user.email}` });
   }
   const how = req.body.access === 'invite' ? 'invite' : 'temp';
@@ -345,4 +379,4 @@ const importCreate = async (req, res) => {
   res.status(201).json({ success: true, data: results, created, message: `${created} account(s) created${created < results.length ? `, ${results.length - created} skipped` : ''}` });
 };
 
-module.exports = { list, create, update, setActive, resendAccess, importTemplate, importPreview, importCreate };
+module.exports = { list, create, update, setActive, resendAccess, emailAllAccess, importTemplate, importPreview, importCreate };

@@ -11,7 +11,7 @@
 //   comments                                          — the later steps
 // The employee never sees what the reviewers write.
 
-const STAFF_FORMS = ['admin_team', 'placement_team', 'admission_team', 'training_team', 'hr', 'hr_team'];
+const STAFF_FORMS = ['admin_team', 'placement_team', 'admission_team', 'training_team', 'hr', 'hr_team', 'lab_tech'];
 const isStaffForm = (formFor) => STAFF_FORMS.includes(formFor);
 
 const BASIC_FIELDS = [
@@ -86,6 +86,9 @@ const RATING_NOTE = {
 // The HR Team fill the same form as HR.
 FUNCTION.hr_team = FUNCTION.hr;
 RATING_NOTE.hr_team = RATING_NOTE.hr;
+// The Lab Techs fill the Admin form.
+FUNCTION.lab_tech = FUNCTION.admin_team;
+RATING_NOTE.lab_tech = RATING_NOTE.admin_team;
 
 const COMPETENCIES = [
   'Subject / Technical Knowledge', 'Quality of work and Consistency', 'Interpersonal Communication', 'Problem Solving Attitude',

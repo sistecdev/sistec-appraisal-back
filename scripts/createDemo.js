@@ -27,7 +27,7 @@ const DEMO = [
   ['Basic Science Faculty Demo', 'faculty.bs.demo@demo.in', 'faculty', 'GN', 'BASIC_SCIENCE', 'Assistant Professor'],
   ['Basic Science HOD Demo', 'hod.bs.demo@demo.in', 'hod', 'GN', 'BASIC_SCIENCE', 'Professor & Head'],
   ['HR Team Member Demo', 'faculty.hrteam.demo@demo.in', 'hr_team', 'GN', '', 'HR Executive'],
-  ['Lab Tech Demo', 'faculty.labtech.demo@demo.in', 'faculty', 'GN', 'LAB_TECH', 'Lab Technician'],
+  ['Lab Tech Demo', 'faculty.labtech.demo@demo.in', 'lab_tech', 'GN', '', 'Lab Technician'],
   ['Lab Tech HOD Demo', 'hod.labtech.demo@demo.in', 'hod', 'GN', 'LAB_TECH', 'Head — Labs'],
 ];
 
